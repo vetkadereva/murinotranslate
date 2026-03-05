@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-
 <meta charset="UTF-8">
 <title>Муринский переводчик</title>
 
@@ -30,6 +29,12 @@ margin:auto;
 h1{
 text-align:center;
 margin-bottom:20px;
+}
+
+.topBar{
+display:flex;
+justify-content:space-between;
+margin-bottom:15px;
 }
 
 .panel{
@@ -75,12 +80,6 @@ background:#3c4043;
 color:white;
 }
 
-.top{
-display:flex;
-justify-content:space-between;
-margin-bottom:10px;
-}
-
 .modal{
 position:fixed;
 top:0;
@@ -115,29 +114,6 @@ cursor:pointer;
 font-size:18px;
 }
 
-.lang{
-padding:6px;
-cursor:pointer;
-}
-
-.lang:hover{
-background:#eee;
-}
-
-.dark .lang:hover{
-background:#444;
-}
-
-.counter{
-position:fixed;
-bottom:8px;
-right:10px;
-font-size:11px;
-opacity:0.5;
-}
-
-/* загрузка */
-
 .loader{
 position:fixed;
 top:0;
@@ -148,9 +124,17 @@ background:rgba(0,0,0,0.5);
 display:none;
 align-items:center;
 justify-content:center;
-font-size:22px;
+font-size:20px;
 color:white;
 z-index:1000;
+}
+
+.counter{
+position:fixed;
+bottom:8px;
+right:10px;
+font-size:11px;
+opacity:0.5;
 }
 
 </style>
@@ -159,110 +143,64 @@ z-index:1000;
 <body>
 
 <div class="loader" id="loader">
-📷 Распознавание фото...
+📷 Распознавание...
 </div>
 
 <div class="container">
 
-<h1 id="title">Муринский переводчик</h1>
+<div class="topBar">
 
-<div class="top">
+<button onclick="toggleDark()" id="themeBtn">🌙 Тёмная тема</button>
 
 <div>
-<button onclick="openDict()" id="dictBtn">📚 Словарь</button>
-<button onclick="openSettings()" id="setBtn">⚙️ Настройки</button>
+<button onclick="openSettings()">⚙️ Настройки</button>
+<button onclick="openDict()">📚 Словарь</button>
 </div>
 
-<button onclick="clearText()" id="clearBtn">Очистить</button>
-
 </div>
+
+<h1 id="title">Муринский переводчик</h1>
 
 <div class="panel">
 
 <div class="box">
 
-<div id="rLabel">Русский</div>
+<div>Русский</div>
 
 <textarea id="input"></textarea>
 
 <div>
-
-<button onclick="copyInput()" id="copyR">Копировать</button>
-<button onclick="openPhoto()" id="photoBtn">📷 Фото</button>
+<button onclick="copyInput()">Копировать</button>
+<button onclick="openPhoto()">📷 Фото</button>
 <button onclick="speakText(input.value)">🔊</button>
-<button onclick="voice()">🎤</button>
-
 </div>
 
 </div>
 
 <div class="box">
 
-<div id="mLabel">Муринский</div>
+<div>Муринский</div>
 
 <textarea id="output" readonly></textarea>
 
 <div>
-
-<button onclick="copyOutput()" id="copyM">Копировать</button>
+<button onclick="copyOutput()">Копировать</button>
 <button onclick="speakText(output.value)">🔊</button>
-
 </div>
 
 </div>
 
 </div>
 
-<input type="file" id="photo" hidden>
+<input type="file" id="photo" accept="image/*" hidden>
 
 </div>
 
 <div class="counter" id="counter"></div>
 
-<!-- словарь -->
-
-<div class="modal" id="dictionary">
-<div class="modalBox">
-
-<div class="close" onclick="closeDict()">✕</div>
-
-<h3>Словарь</h3>
-
-<div id="dictList"></div>
-
-</div>
-</div>
-
-<!-- настройки -->
-
-<div class="modal" id="settings">
-<div class="modalBox">
-
-<div class="close" onclick="closeSettings()">✕</div>
-
-<h3>Настройки</h3>
-
-<h4>Язык сайта</h4>
-
-<input id="langSearch" placeholder="поиск языка">
-
-<div id="langs"></div>
-
-<br>
-
-<button onclick="toggleDark()">🌙 Тёмная тема</button>
-
-<br><br>
-
-<button onclick="resetLang()">Сбросить язык</button>
-
-</div>
-</div>
-
 <script>
 
-// исключения
-
+// перевод муринского
 const exceptions={
 "я":"ч",
 "друг":"друн",
@@ -275,33 +213,20 @@ const exceptions={
 }
 
 function murinTranslate(text){
-
 let words=text.split(/(\s+)/)
-
 return words.map(w=>{
-
 let lw=w.toLowerCase()
-
 if(exceptions[lw]) return exceptions[lw]
-
 if(lw.length<=1) return w
-
 return w+"ость"
-
 }).join("")
-
 }
 
-// ввод
-
 input.addEventListener("input",()=>{
-
 output.value=murinTranslate(input.value)
-
 })
 
 // копирование
-
 function copyInput(){
 navigator.clipboard.writeText(input.value)
 }
@@ -310,52 +235,33 @@ function copyOutput(){
 navigator.clipboard.writeText(output.value)
 }
 
-function clearText(){
-input.value=""
-output.value=""
-}
-
 // тёмная тема
-
 function toggleDark(){
 document.body.classList.toggle("dark")
+
+if(document.body.classList.contains("dark")){
+themeBtn.innerText="☀️ Светлая тема"
+}else{
+themeBtn.innerText="🌙 Тёмная тема"
+}
 }
 
 // голос
-
-function speakText(t){
-let msg=new SpeechSynthesisUtterance(t)
+function speakText(text){
+let msg=new SpeechSynthesisUtterance(text)
 msg.lang="ru-RU"
 speechSynthesis.speak(msg)
 }
 
-// голосовой ввод
-
-function voice(){
-
-let rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)()
-
-rec.lang="ru-RU"
-
-rec.onresult=e=>{
-input.value+=e.results[0][0].transcript
-output.value=murinTranslate(input.value)
-}
-
-rec.start()
-
-}
-
-// фото
-
+// фото (исправлено — можно много раз)
 function openPhoto(){
+photo.value=""   // важно — сброс
 photo.click()
 }
 
 photo.addEventListener("change",async e=>{
 
 let file=e.target.files[0]
-
 if(!file) return
 
 loader.style.display="flex"
@@ -363,114 +269,16 @@ loader.style.display="flex"
 let result=await Tesseract.recognize(file,"rus")
 
 input.value=result.data.text
-
 output.value=murinTranslate(input.value)
 
 loader.style.display="none"
 
 })
 
-// словарь
-
-const dictWords=[
-"мама","папа","дом","школа","кот","собака","телефон",
-"компьютер","интернет","еда","вода","машина","игра"
-]
-
-function openDict(){
-
-let box=document.getElementById("dictList")
-
-box.innerHTML=""
-
-dictWords.forEach(w=>{
-box.innerHTML+=w+" → "+w+"ость<br>"
-})
-
-for(let k in exceptions){
-box.innerHTML+=k+" → "+exceptions[k]+"<br>"
-}
-
-dictionary.style.display="flex"
-
-}
-
-function closeDict(){
-dictionary.style.display="none"
-}
-
-// настройки
-
-function openSettings(){
-settings.style.display="flex"
-}
-
-function closeSettings(){
-settings.style.display="none"
-}
-
-// языки
-
-const languages=[
-"Русский",
-"English",
-"Deutsch",
-"Français",
-"Español",
-"Italiano",
-"Polski",
-"Čeština",
-"Українська",
-"日本語",
-"中文"
-]
-
-function renderLangs(list){
-
-langs.innerHTML=""
-
-list.forEach(l=>{
-
-let d=document.createElement("div")
-
-d.className="lang"
-d.innerText=l
-
-langs.appendChild(d)
-
-})
-
-}
-
-renderLangs(languages)
-
-langSearch.addEventListener("input",()=>{
-
-let v=langSearch.value.toLowerCase()
-
-let filtered=languages.filter(l=>l.toLowerCase().includes(v))
-
-renderLangs(filtered)
-
-})
-
-function resetLang(){
-location.reload()
-}
-
 // онлайн
-
-function online(){
-
-let n=Math.floor(Math.random()*120)+40
-
-counter.innerText="online "+n
-
-}
-
-setInterval(online,3000)
-
-online()
+setInterval(()=>{
+counter.innerText="online "+(Math.floor(Math.random()*100)+20)
+},3000)
 
 </script>
 
