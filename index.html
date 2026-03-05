@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
+
 <meta charset="UTF-8">
-<title>Murinsky Translate</title>
+<title>Муринский переводчик</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <style>
 
 body{
 font-family:Arial;
-background:#f1f3f4;
+background:#f8f9fa;
 margin:0;
-display:flex;
-flex-direction:column;
-align-items:center;
-padding:40px;
+padding:30px;
+transition:0.3s;
 }
 
 .dark{
@@ -21,73 +23,125 @@ background:#202124;
 color:white;
 }
 
-h1{
-margin-bottom:30px;
-}
-
 .container{
-background:white;
-padding:25px;
-border-radius:12px;
-box-shadow:0 4px 20px rgba(0,0,0,0.1);
-width:700px;
-max-width:95%;
+max-width:1000px;
+margin:auto;
 }
 
-.dark .container{
+h1{
+text-align:center;
+margin-bottom:20px;
+}
+
+.panel{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+}
+
+.box{
+background:white;
+border-radius:12px;
+border:1px solid #dadce0;
+padding:14px;
+box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dark .box{
 background:#303134;
+border-color:#5f6368;
 }
 
 textarea{
 width:100%;
-height:120px;
-resize:none;
-padding:10px;
-font-size:16px;
-border-radius:8px;
-border:1px solid #ccc;
-margin-bottom:10px;
-}
-
-button{
-padding:8px 14px;
+height:170px;
 border:none;
-border-radius:8px;
-cursor:pointer;
-background:#1a73e8;
-color:white;
-margin:3px;
+resize:none;
+font-size:16px;
+outline:none;
+background:transparent;
+color:inherit;
+line-height:1.4;
 }
 
-.small{
-font-size:10px;
-opacity:0.5;
+.buttons{
 margin-top:10px;
 }
 
-.popup{
-position:fixed;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 10px 40px rgba(0,0,0,0.3);
-width:400px;
-max-height:70vh;
-overflow:auto;
-display:none;
+button{
+border:none;
+background:#f1f3f4;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:14px;
+margin-right:5px;
 }
 
-.dark .popup{
+.dark button{
+background:#3c4043;
+color:white;
+}
+
+.topButtons{
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
+}
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.4);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+.modalBox{
+background:white;
+padding:20px;
+border-radius:12px;
+width:380px;
+max-height:400px;
+overflow:auto;
+position:relative;
+}
+
+.dark .modalBox{
 background:#303134;
 }
 
 .close{
-float:right;
+position:absolute;
+top:10px;
+right:12px;
 cursor:pointer;
 font-size:18px;
+}
+
+.lang{
+padding:6px;
+cursor:pointer;
+}
+
+.lang:hover{
+background:#eee;
+}
+
+.dark .lang:hover{
+background:#444;
+}
+
+.counter{
+position:fixed;
+bottom:8px;
+right:10px;
+font-size:11px;
+opacity:0.5;
 }
 
 </style>
@@ -95,279 +149,374 @@ font-size:18px;
 
 <body>
 
-<h1 id="title">Муринский переводчик</h1>
-
 <div class="container">
 
-<textarea id="input" placeholder="Введите текст"></textarea>
+<h1 id="title">Муринский переводчик</h1>
 
-<textarea id="output" readonly></textarea>
+<div class="topButtons">
 
 <div>
+<button id="dictBtn" onclick="openDict()">📚 Словарь</button>
+<button id="setBtn" onclick="openSettings()">⚙️ Настройки</button>
+<button onclick="toggleDark()">🌙</button>
+</div>
 
-<button onclick="copyText('input')">Копировать</button>
-<button onclick="copyText('output')">Копировать</button>
-<button onclick="clearText()">Очистить</button>
+<button id="clearBtn" onclick="clearText()">Очистить</button>
 
-<button onclick="speak('input')">🔊</button>
-<button onclick="speak('output')">🔊</button>
+</div>
 
+<div class="panel">
+
+<div class="box">
+
+<div id="rLabel">Русский</div>
+
+<textarea id="input"></textarea>
+
+<div class="buttons">
+
+<button id="copyR" onclick="copyInput()">Копировать</button>
+<button id="photoBtn" onclick="openPhoto()">📷 Фото</button>
+<button onclick="speakText(input.value)">🔊</button>
 <button onclick="startVoice()">🎤</button>
 
 </div>
 
-<div>
+</div>
 
-<button onclick="openDict()">📚 Словарь</button>
-<button onclick="openSettings()">⚙ Настройки</button>
+<div class="box">
+
+<div id="mLabel">Муринский</div>
+
+<textarea id="output" readonly></textarea>
+
+<div class="buttons">
+
+<button id="copyM" onclick="copyOutput()">Копировать</button>
+<button onclick="speakText(output.value)">🔊</button>
 
 </div>
 
 </div>
 
-<div class="small" id="users">online: 1</div>
+</div>
 
-<div id="dictionary" class="popup">
-
-<div class="close" onclick="closeDict()">✖</div>
-
-<h3>Словарь</h3>
-
-<div id="dictlist"></div>
+<input type="file" id="photo" hidden>
 
 </div>
 
-<div id="settings" class="popup">
+<div class="counter" id="counter"></div>
 
-<div class="close" onclick="closeSettings()">✖</div>
+<!-- словарь -->
 
-<h3>Настройки</h3>
+<div class="modal" id="dictionary">
 
-<button onclick="toggleDark()">🌙 Тёмная тема</button>
+<div class="modalBox">
 
-<br><br>
+<div class="close" onclick="closeDict()">✕</div>
 
-<input id="searchLang" placeholder="Поиск языка">
+<h3 id="dictTitle">Словарь</h3>
+
+<div id="dictList"></div>
+
+</div>
+
+</div>
+
+<!-- настройки -->
+
+<div class="modal" id="settings">
+
+<div class="modalBox">
+
+<div class="close" onclick="closeSettings()">✕</div>
+
+<h3 id="settingsTitle">Настройки</h3>
+
+<h4 id="langTitle">Язык сайта</h4>
+
+<input id="langSearch" placeholder="поиск языка">
 
 <div id="langs"></div>
 
-<br>
+<button onclick="resetLang()" id="resetLangBtn">Сбросить язык</button>
 
-<button onclick="resetLang()">Сбросить язык</button>
+</div>
 
 </div>
 
 <script>
 
-const dictionary={
+// исключения
+const exceptions={
+"я":"ч",
 "друг":"друн",
-"я":"йон",
-"дед":"дедун",
-"батя":"батюн",
-"жена":"женун",
-"сын":"сынун",
-"кто":"ктун",
-"что":"штун"
+"дед":"дод",
+"батя":"батч",
+"жена":"жинка",
+"сын":"сыр",
+"кто":"кьо",
+"что":"чьо"
 }
+
+// словарь
+const dictionary=[
+"мама","папа","дом","школа","кот","собака","телефон",
+"компьютер","интернет","еда","вода","машина","игра",
+"фильм","музыка","книга","деньги","работа","жизнь",
+"ночь","день","солнце","луна","звезда"
+]
 
 const input=document.getElementById("input")
 const output=document.getElementById("output")
 
-function translateWord(word){
-
-let w=word.toLowerCase()
-
-if(dictionary[w]) return dictionary[w]
-
-if(w.length<=2) return word
-
-return word+"ость"
-
-}
-
-function translate(text){
-
-return text.split(" ").map(translateWord).join(" ")
-
-}
-
-input.addEventListener("input",()=>{
-
-let t=input.value
-
-output.value=translate(t)
-
-localStorage.setItem("text",t)
-
-})
-
-window.onload=()=>{
-
-let saved=localStorage.getItem("text")
+// автосохранение
+let saved=localStorage.getItem("murinsky_text")
 
 if(saved){
 input.value=saved
 output.value=translate(saved)
 }
 
-updateDict()
+function translate(text){
 
-fakeUsers()
+let words=text.split(/(\s+)/)
+
+return words.map(w=>{
+
+let lw=w.toLowerCase()
+
+if(exceptions[lw]) return exceptions[lw]
+
+if(lw.length<=1) return w
+
+return w+"ость"
+
+}).join("")
 
 }
 
-function copyText(id){
+input.addEventListener("input",()=>{
 
-navigator.clipboard.writeText(document.getElementById(id).value)
+let v=input.value
 
+if(/[^а-яА-ЯёЁ0-9\s.,!?]/.test(v)){
+input.value=v.replace(/[^а-яА-ЯёЁ0-9\s.,!?]/g,"")
+}
+
+output.value=translate(input.value)
+
+localStorage.setItem("murinsky_text",input.value)
+
+})
+
+function copyInput(){
+navigator.clipboard.writeText(input.value)
+}
+
+function copyOutput(){
+navigator.clipboard.writeText(output.value)
 }
 
 function clearText(){
-
 input.value=""
 output.value=""
-
-localStorage.removeItem("text")
-
-}
-
-function openDict(){
-
-document.getElementById("dictionary").style.display="block"
-
-}
-
-function closeDict(){
-
-document.getElementById("dictionary").style.display="none"
-
-}
-
-function updateDict(){
-
-let d=document.getElementById("dictlist")
-
-d.innerHTML=""
-
-for(let k in dictionary){
-
-let div=document.createElement("div")
-
-div.textContent=k+" — "+dictionary[k]
-
-d.appendChild(div)
-
-}
-
-}
-
-function openSettings(){
-
-document.getElementById("settings").style.display="block"
-
-}
-
-function closeSettings(){
-
-document.getElementById("settings").style.display="none"
-
+localStorage.removeItem("murinsky_text")
 }
 
 function toggleDark(){
-
 document.body.classList.toggle("dark")
-
 }
 
-function speak(id){
-
-let text=document.getElementById(id).value
-
-let speech=new SpeechSynthesisUtterance(text)
-
-speech.lang="ru-RU"
-
-speechSynthesis.speak(speech)
-
+// голос
+function speakText(text){
+let msg=new SpeechSynthesisUtterance(text)
+msg.lang="ru-RU"
+speechSynthesis.speak(msg)
 }
 
+// голосовой ввод
 function startVoice(){
 
-let rec=new webkitSpeechRecognition()
+let rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)()
 
 rec.lang="ru-RU"
 
 rec.onresult=function(e){
-
-input.value=e.results[0][0].transcript
-
-input.dispatchEvent(new Event("input"))
-
+input.value+=e.results[0][0].transcript
+output.value=translate(input.value)
 }
 
 rec.start()
 
 }
 
-function fakeUsers(){
+// словарь
+function openDict(){
 
-setInterval(()=>{
+let box=document.getElementById("dictList")
+box.innerHTML=""
 
-let n=Math.floor(Math.random()*20)+1
+dictionary.forEach(w=>{
+box.innerHTML+=w+" → "+w+"ость<br>"
+})
 
-document.getElementById("users").textContent="online: "+n
+for(let k in exceptions){
+box.innerHTML+=k+" → "+exceptions[k]+"<br>"
+}
 
-},4000)
+document.getElementById("dictionary").style.display="flex"
 
 }
 
-const languages=[
-"Русский","English","Deutsch","Français","Español",
-"Italiano","Polski","Čeština","日本語","中文","Українська"
+function closeDict(){
+document.getElementById("dictionary").style.display="none"
+}
+
+// настройки
+function openSettings(){
+document.getElementById("settings").style.display="flex"
+}
+
+function closeSettings(){
+document.getElementById("settings").style.display="none"
+}
+
+// языки интерфейса
+
+const translations={
+
+Русский:{
+title:"Муринский переводчик",
+dict:"Словарь",
+settings:"Настройки",
+copy:"Копировать",
+clear:"Очистить",
+photo:"Фото",
+lang:"Язык сайта",
+reset:"Сбросить язык",
+r:"Русский",
+m:"Муринский"
+},
+
+English:{
+title:"Murinsky Translator",
+dict:"Dictionary",
+settings:"Settings",
+copy:"Copy",
+clear:"Clear",
+photo:"Photo",
+lang:"Site language",
+reset:"Reset language",
+r:"Russian",
+m:"Murinsky"
+},
+
+Deutsch:{
+title:"Murinsky Übersetzer",
+dict:"Wörterbuch",
+settings:"Einstellungen",
+copy:"Kopieren",
+clear:"Löschen",
+photo:"Foto",
+lang:"Sprache",
+reset:"Sprache zurücksetzen",
+r:"Russisch",
+m:"Murinsky"
+}
+
+}
+
+// список языков
+const langs=[
+"Русский","English","Deutsch"
 ]
 
 const langBox=document.getElementById("langs")
-const search=document.getElementById("searchLang")
 
-function drawLangs(list){
+function renderLangs(list){
 
 langBox.innerHTML=""
 
 list.forEach(l=>{
 
-let b=document.createElement("button")
+let d=document.createElement("div")
+d.className="lang"
+d.innerText=l
+d.onclick=()=>changeLang(l)
 
-b.textContent=l
-
-b.onclick=()=>setLang(l)
-
-langBox.appendChild(b)
+langBox.appendChild(d)
 
 })
 
 }
 
-drawLangs(languages)
+renderLangs(langs)
 
-search.addEventListener("input",()=>{
+document.getElementById("langSearch").addEventListener("input",()=>{
 
-let q=search.value.toLowerCase()
+let v=document.getElementById("langSearch").value.toLowerCase()
 
-drawLangs(languages.filter(l=>l.toLowerCase().includes(q)))
+let filtered=langs.filter(l=>l.toLowerCase().includes(v))
+
+renderLangs(filtered)
 
 })
 
-function setLang(l){
+function changeLang(lang){
 
-alert("Язык интерфейса: "+l)
+let t=translations[lang]
+
+if(!t)return
+
+document.getElementById("title").innerText=t.title
+document.getElementById("dictBtn").innerText="📚 "+t.dict
+document.getElementById("setBtn").innerText="⚙️ "+t.settings
+document.getElementById("copyR").innerText=t.copy
+document.getElementById("copyM").innerText=t.copy
+document.getElementById("clearBtn").innerText=t.clear
+document.getElementById("photoBtn").innerText="📷 "+t.photo
+document.getElementById("langTitle").innerText=t.lang
+document.getElementById("resetLangBtn").innerText=t.reset
+document.getElementById("rLabel").innerText=t.r
+document.getElementById("mLabel").innerText=t.m
 
 }
 
 function resetLang(){
+changeLang("Русский")
+}
 
-alert("Язык сброшен на русский")
+// фото
+function openPhoto(){
+document.getElementById("photo").click()
+}
+
+document.getElementById("photo").addEventListener("change",async(e)=>{
+
+let file=e.target.files[0]
+
+if(!file)return
+
+let result=await Tesseract.recognize(file,"rus")
+
+input.value=result.data.text
+output.value=translate(input.value)
+
+})
+
+// онлайн
+function updateCounter(){
+
+let num=Math.floor(Math.random()*120)+30
+
+document.getElementById("counter").innerText="online: "+num
 
 }
+
+setInterval(updateCounter,3000)
+
+updateCounter()
 
 </script>
 
