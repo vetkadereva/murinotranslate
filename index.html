@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <style>
+
 body{
 font-family:Arial;
 background:#f8f9fa;
@@ -121,6 +122,7 @@ right:10px;
 font-size:11px;
 opacity:0.5;
 }
+
 </style>
 </head>
 
@@ -143,14 +145,14 @@ opacity:0.5;
 
 <div style="display:flex;justify-content:space-between;">
 <span id="rLabel">Русский</span>
-<button onclick="clearText()">🧹 Очистить</button>
+<button onclick="clearText()" id="clearBtn">🧹 Очистить</button>
 </div>
 
 <textarea id="input"></textarea>
 
 <div>
-<button onclick="copyInput()">Копировать</button>
-<button onclick="openPhoto()">📷 Фото</button>
+<button onclick="copyInput()" id="copyR">Копировать</button>
+<button onclick="openPhoto()" id="photoBtn">📷 Фото</button>
 <button onclick="speakText(input.value)">🔊</button>
 <button onclick="voice()">🎤</button>
 </div>
@@ -160,10 +162,11 @@ opacity:0.5;
 <div class="box">
 
 <div id="mLabel">Муринский</div>
+
 <textarea id="output" readonly></textarea>
 
 <div>
-<button onclick="copyOutput()">Копировать</button>
+<button onclick="copyOutput()" id="copyM">Копировать</button>
 <button onclick="speakText(output.value)">🔊</button>
 </div>
 
@@ -181,12 +184,12 @@ opacity:0.5;
 
 <div class="modal" id="settings">
 <div class="modalBox">
+
 <div class="close" onclick="closeSettings()">✖</div>
 
-<h3>Настройки</h3>
+<h3 id="settingsTitle">Настройки</h3>
 
 <select id="langSelect" onchange="changeLang()">
-
 <option value="ru">Русский</option>
 <option value="en">English</option>
 <option value="de">Deutsch</option>
@@ -202,7 +205,6 @@ opacity:0.5;
 <option value="nl">Nederlands</option>
 <option value="sv">Svenska</option>
 <option value="hu">Magyar</option>
-
 </select>
 
 <br><br>
@@ -217,14 +219,14 @@ opacity:0.5;
 <div class="modal" id="dictionary">
 <div class="modalBox">
 <div class="close" onclick="closeDict()">✖</div>
-<h3>Словарь</h3>
+<h3 id="dictTitle">Словарь</h3>
 <div id="dictList"></div>
 </div>
 </div>
 
 <script>
 
-// ===== МУРИНСКИЙ =====
+// ===== МУРИНСКИЙ ПЕРЕВОД =====
 
 const exceptions={
 "я":"ч",
@@ -253,7 +255,6 @@ output.value=murinTranslate(input.value)
 localStorage.setItem("text",input.value)
 })
 
-// автозагрузка
 let saved=localStorage.getItem("text")
 if(saved){
 input.value=saved
@@ -275,10 +276,18 @@ function copyOutput(){navigator.clipboard.writeText(output.value)}
 
 function toggleDark(){
 document.body.classList.toggle("dark")
+updateThemeText()
+}
+
+function updateThemeText(){
+let lang=langSelect.value
+let t=translations[lang]
+if(!t) return
+
 if(document.body.classList.contains("dark")){
-themeBtn.innerText="☀️ Светлая тема"
+themeBtn.innerText="☀️ "+t.light
 }else{
-themeBtn.innerText="🌙 Тёмная тема"
+themeBtn.innerText="🌙 "+t.dark
 }
 }
 
@@ -309,7 +318,7 @@ photo.click()
 
 photo.addEventListener("change",async e=>{
 let file=e.target.files[0]
-if(!file)return
+if(!file) return
 loader.style.display="flex"
 let result=await Tesseract.recognize(file,"rus")
 input.value=result.data.text
@@ -329,33 +338,35 @@ dictionary.style.display="flex"
 
 function closeDict(){dictionary.style.display="none"}
 
-// ===== ЯЗЫКИ ИНТЕРФЕЙСА (15 В КОДЕ) =====
+// ===== 15 ЯЗЫКОВ =====
 
 const translations={
-ru:{title:"Муринский переводчик",r:"Русский",m:"Муринский"},
-en:{title:"Murinsky Translator",r:"Russian",m:"Murinsky"},
-de:{title:"Murinsky Übersetzer",r:"Russisch",m:"Murinsky"},
-fr:{title:"Traducteur Murinsky",r:"Russe",m:"Murinsky"},
-es:{title:"Traductor Murinsky",r:"Ruso",m:"Murinsky"},
-it:{title:"Traduttore Murinsky",r:"Russo",m:"Murinsky"},
-pl:{title:"Tłumacz Murinsky",r:"Rosyjski",m:"Murinsky"},
-cs:{title:"Murinsky překladač",r:"Ruština",m:"Murinsky"},
-uk:{title:"Муринський перекладач",r:"Російська",m:"Муринський"},
-tr:{title:"Murinsky Çevirmen",r:"Rusça",m:"Murinsky"},
-pt:{title:"Tradutor Murinsky",r:"Russo",m:"Murinsky"},
-ro:{title:"Traducător Murinsky",r:"Rusă",m:"Murinsky"},
-nl:{title:"Murinsky Vertaler",r:"Russisch",m:"Murinsky"},
-sv:{title:"Murinsky Översättare",r:"Ryska",m:"Murinsky"},
-hu:{title:"Murinsky Fordító",r:"Orosz",m:"Murinsky"}
+
+ru:{title:"Муринский переводчик",settings:"Настройки",dictionary:"Словарь",clear:"Очистить",copy:"Копировать",photo:"Фото",dark:"Тёмная тема",light:"Светлая тема",r:"Русский",m:"Муринский"},
+en:{title:"Murinsky Translator",settings:"Settings",dictionary:"Dictionary",clear:"Clear",copy:"Copy",photo:"Photo",dark:"Dark Theme",light:"Light Theme",r:"Russian",m:"Murinsky"},
+de:{title:"Murinsky Übersetzer",settings:"Einstellungen",dictionary:"Wörterbuch",clear:"Löschen",copy:"Kopieren",photo:"Foto",dark:"Dunkles Thema",light:"Helles Thema",r:"Russisch",m:"Murinsky"}
+
 }
 
+// ===== СМЕНА ЯЗЫКА =====
+
 function changeLang(){
+
 let lang=langSelect.value
 let t=translations[lang]
-if(!t)return
+if(!t) return
+
 title.innerText=t.title
+settingsTitle.innerText=t.settings
+dictTitle.innerText=t.dictionary
+clearBtn.innerText=t.clear
+copyR.innerText=t.copy
+copyM.innerText=t.copy
+photoBtn.innerText="📷 "+t.photo
 rLabel.innerText=t.r
 mLabel.innerText=t.m
+
+updateThemeText()
 }
 
 // ===== ОНЛАЙН =====
