@@ -136,10 +136,31 @@ font-size:11px;
 opacity:0.5;
 }
 
+/* загрузка */
+
+.loader{
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.5);
+display:none;
+align-items:center;
+justify-content:center;
+font-size:22px;
+color:white;
+z-index:1000;
+}
+
 </style>
 </head>
 
 <body>
+
+<div class="loader" id="loader">
+📷 Распознавание фото...
+</div>
 
 <div class="container">
 
@@ -150,7 +171,6 @@ opacity:0.5;
 <div>
 <button onclick="openDict()" id="dictBtn">📚 Словарь</button>
 <button onclick="openSettings()" id="setBtn">⚙️ Настройки</button>
-<button onclick="toggleDark()">🌙</button>
 </div>
 
 <button onclick="clearText()" id="clearBtn">Очистить</button>
@@ -206,7 +226,7 @@ opacity:0.5;
 
 <div class="close" onclick="closeDict()">✕</div>
 
-<h3 id="dictTitle">Словарь</h3>
+<h3>Словарь</h3>
 
 <div id="dictList"></div>
 
@@ -220,13 +240,19 @@ opacity:0.5;
 
 <div class="close" onclick="closeSettings()">✕</div>
 
-<h3 id="settingsTitle">Настройки</h3>
+<h3>Настройки</h3>
 
-<h4 id="langTitle">Язык сайта</h4>
+<h4>Язык сайта</h4>
 
 <input id="langSearch" placeholder="поиск языка">
 
 <div id="langs"></div>
+
+<br>
+
+<button onclick="toggleDark()">🌙 Тёмная тема</button>
+
+<br><br>
 
 <button onclick="resetLang()">Сбросить язык</button>
 
@@ -236,6 +262,7 @@ opacity:0.5;
 <script>
 
 // исключения
+
 const exceptions={
 "я":"ч",
 "друг":"друн",
@@ -246,8 +273,6 @@ const exceptions={
 "кто":"кьо",
 "что":"чьо"
 }
-
-// перевод в муринский
 
 function murinTranslate(text){
 
@@ -267,34 +292,23 @@ return w+"ость"
 
 }
 
-// основной переводчик
-
-async function translateInterface(text,target){
-
-let url=`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=${target}&dt=t&q=`+encodeURIComponent(text)
-
-let r=await fetch(url)
-
-let data=await r.json()
-
-return data[0].map(x=>x[0]).join("")
-
-}
-
 // ввод
 
 input.addEventListener("input",()=>{
 
-let v=input.value
-
-output.value=murinTranslate(v)
+output.value=murinTranslate(input.value)
 
 })
 
 // копирование
 
-function copyInput(){navigator.clipboard.writeText(input.value)}
-function copyOutput(){navigator.clipboard.writeText(output.value)}
+function copyInput(){
+navigator.clipboard.writeText(input.value)
+}
+
+function copyOutput(){
+navigator.clipboard.writeText(output.value)
+}
 
 function clearText(){
 input.value=""
@@ -342,11 +356,17 @@ photo.addEventListener("change",async e=>{
 
 let file=e.target.files[0]
 
+if(!file) return
+
+loader.style.display="flex"
+
 let result=await Tesseract.recognize(file,"rus")
 
 input.value=result.data.text
 
 output.value=murinTranslate(input.value)
+
+loader.style.display="none"
 
 })
 
@@ -354,8 +374,7 @@ output.value=murinTranslate(input.value)
 
 const dictWords=[
 "мама","папа","дом","школа","кот","собака","телефон",
-"компьютер","интернет","еда","вода","машина","игра",
-"фильм","музыка","книга","деньги","работа","жизнь"
+"компьютер","интернет","еда","вода","машина","игра"
 ]
 
 function openDict(){
@@ -376,34 +395,39 @@ dictionary.style.display="flex"
 
 }
 
-function closeDict(){dictionary.style.display="none"}
+function closeDict(){
+dictionary.style.display="none"
+}
 
 // настройки
 
-function openSettings(){settings.style.display="flex"}
-function closeSettings(){settings.style.display="none"}
+function openSettings(){
+settings.style.display="flex"
+}
+
+function closeSettings(){
+settings.style.display="none"
+}
 
 // языки
 
-const languages={
-"Русский":"ru",
-"English":"en",
-"Deutsch":"de",
-"Français":"fr",
-"Español":"es",
-"Italiano":"it",
-"Polski":"pl",
-"Čeština":"cs",
-"日本語":"ja",
-"中文":"zh",
-"Українська":"uk"
-}
-
-const langsDiv=document.getElementById("langs")
+const languages=[
+"Русский",
+"English",
+"Deutsch",
+"Français",
+"Español",
+"Italiano",
+"Polski",
+"Čeština",
+"Українська",
+"日本語",
+"中文"
+]
 
 function renderLangs(list){
 
-langsDiv.innerHTML=""
+langs.innerHTML=""
 
 list.forEach(l=>{
 
@@ -412,70 +436,29 @@ let d=document.createElement("div")
 d.className="lang"
 d.innerText=l
 
-d.onclick=()=>setLang(l)
-
-langsDiv.appendChild(d)
+langs.appendChild(d)
 
 })
 
 }
 
-renderLangs(Object.keys(languages))
-
-// смена языка
-
-async function setLang(name){
-
-let code=languages[name]
-
-if(!code) return
-
-let elements={
-title:"Муринский переводчик",
-dictBtn:"Словарь",
-setBtn:"Настройки",
-clearBtn:"Очистить",
-photoBtn:"Фото",
-copyR:"Копировать",
-copyM:"Копировать",
-rLabel:"Русский",
-mLabel:"Муринский",
-dictTitle:"Словарь",
-settingsTitle:"Настройки",
-langTitle:"Язык сайта"
-}
-
-for(let id in elements){
-
-let text=elements[id]
-
-let translated=await translateInterface(text,code)
-
-document.getElementById(id).innerText=translated
-
-}
-
-}
-
-// поиск языка
+renderLangs(languages)
 
 langSearch.addEventListener("input",()=>{
 
 let v=langSearch.value.toLowerCase()
 
-let filtered=Object.keys(languages).filter(l=>l.toLowerCase().includes(v))
+let filtered=languages.filter(l=>l.toLowerCase().includes(v))
 
 renderLangs(filtered)
 
 })
 
-// сброс
-
 function resetLang(){
 location.reload()
 }
 
-// онлайн счётчик
+// онлайн
 
 function online(){
 
