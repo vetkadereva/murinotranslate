@@ -13,7 +13,7 @@ font-family:Arial;
 background:#f8f9fa;
 margin:0;
 padding:30px;
-transition:0.3s;
+transition:.3s;
 }
 
 .dark{
@@ -28,13 +28,13 @@ margin:auto;
 
 h1{
 text-align:center;
-margin-bottom:20px;
 }
 
 .panel{
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:12px;
+margin-top:20px;
 }
 
 .box{
@@ -60,17 +60,13 @@ background:transparent;
 color:inherit;
 }
 
-.buttons{
-margin-top:10px;
-}
-
 button{
 border:none;
 background:#e8eaed;
 padding:8px 12px;
 border-radius:8px;
 cursor:pointer;
-margin-right:5px;
+margin:3px;
 }
 
 .dark button{
@@ -81,7 +77,6 @@ color:white;
 .topButtons{
 display:flex;
 justify-content:space-between;
-margin-bottom:10px;
 }
 
 .modal{
@@ -90,7 +85,7 @@ top:0;
 left:0;
 right:0;
 bottom:0;
-background:rgba(0,0,0,0.4);
+background:rgba(0,0,0,.4);
 display:none;
 align-items:center;
 justify-content:center;
@@ -99,7 +94,7 @@ justify-content:center;
 .modalBox{
 background:white;
 padding:20px;
-border-radius:12px;
+border-radius:10px;
 width:380px;
 max-height:400px;
 overflow:auto;
@@ -115,7 +110,6 @@ position:absolute;
 top:10px;
 right:12px;
 cursor:pointer;
-font-size:18px;
 }
 
 .lang{
@@ -133,10 +127,10 @@ background:#444;
 
 .counter{
 position:fixed;
-bottom:8px;
+bottom:5px;
 right:10px;
 font-size:11px;
-opacity:0.5;
+opacity:.5;
 }
 
 </style>
@@ -156,7 +150,7 @@ opacity:0.5;
 <button onclick="toggleDark()">🌙</button>
 </div>
 
-<button id="clearBtn" onclick="clearText()">Очистить</button>
+<button onclick="clearText()" id="clearBtn">Очистить</button>
 
 </div>
 
@@ -168,11 +162,12 @@ opacity:0.5;
 
 <textarea id="input"></textarea>
 
-<div class="buttons">
+<div>
 
-<button id="copyR" onclick="copyInput()">Копировать</button>
-<button id="photoBtn" onclick="openPhoto()">📷 Фото</button>
-<button onclick="speakText(input.value)">🔊</button>
+<button onclick="copyInput()">Копировать</button>
+<button onclick="startVoice()">🎤</button>
+<button onclick="openPhoto()">📷</button>
+<button onclick="speak(input.value)">🔊</button>
 
 </div>
 
@@ -184,10 +179,10 @@ opacity:0.5;
 
 <textarea id="output" readonly></textarea>
 
-<div class="buttons">
+<div>
 
-<button id="copyM" onclick="copyOutput()">Копировать</button>
-<button onclick="speakText(output.value)">🔊</button>
+<button onclick="copyOutput()">Копировать</button>
+<button onclick="speak(output.value)">🔊</button>
 
 </div>
 
@@ -204,39 +199,33 @@ opacity:0.5;
 <!-- словарь -->
 
 <div class="modal" id="dictionary">
-
 <div class="modalBox">
 
 <div class="close" onclick="closeDict()">✕</div>
 
-<h3 id="dictTitle">Словарь</h3>
+<h3>Словарь</h3>
 
 <div id="dictList"></div>
 
 </div>
-
 </div>
 
 <!-- настройки -->
 
 <div class="modal" id="settings">
-
 <div class="modalBox">
 
 <div class="close" onclick="closeSettings()">✕</div>
 
-<h3 id="settingsTitle">Настройки</h3>
-
-<h4 id="langTitle">Язык сайта</h4>
+<h3>Язык сайта</h3>
 
 <input id="langSearch" placeholder="поиск языка">
 
 <div id="langs"></div>
 
-<button onclick="resetLang()" id="resetLangBtn">Сбросить язык</button>
+<button onclick="resetLang()">Сбросить язык</button>
 
 </div>
-
 </div>
 
 <script>
@@ -253,14 +242,7 @@ const exceptions={
 "что":"чьо"
 }
 
-// словарь
-const dictionary=[
-"мама","папа","дом","школа","кот","собака","телефон",
-"компьютер","интернет","еда","вода","машина","игра",
-"фильм","музыка","книга","деньги","работа","жизнь",
-"ночь","день","солнце","луна","звезда"
-]
-
+// перевод
 const input=document.getElementById("input")
 const output=document.getElementById("output")
 
@@ -294,6 +276,7 @@ output.value=translate(input.value)
 
 })
 
+// копирование
 function copyInput(){
 navigator.clipboard.writeText(input.value)
 }
@@ -307,35 +290,68 @@ input.value=""
 output.value=""
 }
 
+// тёмная тема
 function toggleDark(){
 document.body.classList.toggle("dark")
 }
 
-// голос
-
-function speakText(text){
+// голос воспроизведение
+function speak(text){
 
 let msg=new SpeechSynthesisUtterance(text)
-
 msg.lang="ru-RU"
-
 speechSynthesis.speak(msg)
 
 }
 
-// словарь
+// 🎤 голосовой ввод
+function startVoice(){
 
+const SpeechRecognition =
+window.SpeechRecognition || window.webkitSpeechRecognition
+
+const recognition = new SpeechRecognition()
+
+recognition.lang="ru-RU"
+recognition.start()
+
+recognition.onresult=(event)=>{
+
+let text=event.results[0][0].transcript
+
+input.value+= " "+text
+output.value=translate(input.value)
+
+}
+
+}
+
+// фото
+function openPhoto(){
+document.getElementById("photo").click()
+}
+
+document.getElementById("photo").addEventListener("change",async(e)=>{
+
+let file=e.target.files[0]
+
+let result=await Tesseract.recognize(file,"rus")
+
+input.value=result.data.text
+output.value=translate(input.value)
+
+})
+
+// словарь
 function openDict(){
 
 let box=document.getElementById("dictList")
 box.innerHTML=""
 
-dictionary.forEach(w=>{
-box.innerHTML+=w+" → "+w+"ость<br>"
-})
-
 for(let k in exceptions){
+
 box.innerHTML+=k+" → "+exceptions[k]+"<br>"
+
 }
 
 document.getElementById("dictionary").style.display="flex"
@@ -347,7 +363,6 @@ document.getElementById("dictionary").style.display="none"
 }
 
 // настройки
-
 function openSettings(){
 document.getElementById("settings").style.display="flex"
 }
@@ -356,45 +371,24 @@ function closeSettings(){
 document.getElementById("settings").style.display="none"
 }
 
-// языки интерфейса
+// языки
 
 const translations={
 
 Русский:{
 title:"Муринский переводчик",
-dict:"Словарь",
-settings:"Настройки",
-copy:"Копировать",
-clear:"Очистить",
-photo:"Фото",
-lang:"Язык сайта",
-reset:"Сбросить язык",
 r:"Русский",
 m:"Муринский"
 },
 
 English:{
 title:"Murinsky Translator",
-dict:"Dictionary",
-settings:"Settings",
-copy:"Copy",
-clear:"Clear",
-photo:"Photo",
-lang:"Site language",
-reset:"Reset language",
 r:"Russian",
 m:"Murinsky"
 },
 
 Deutsch:{
 title:"Murinsky Übersetzer",
-dict:"Wörterbuch",
-settings:"Einstellungen",
-copy:"Kopieren",
-clear:"Löschen",
-photo:"Foto",
-lang:"Sprache",
-reset:"Sprache zurücksetzen",
 r:"Russisch",
 m:"Murinsky"
 }
@@ -402,49 +396,30 @@ m:"Murinsky"
 }
 
 // список языков
-
 const langs=[
 "Русский","English","Deutsch","Français","Español",
-"Italiano","Polski","Čeština","Українська",
-"日本語","한국어","中文"
+"Italiano","Polski","Čeština","日本語","中文"
 ]
 
 const langBox=document.getElementById("langs")
 
-function renderLangs(list){
-
-langBox.innerHTML=""
-
-list.forEach(l=>{
+langs.forEach(l=>{
 
 let d=document.createElement("div")
 d.className="lang"
 d.innerText=l
+
 d.onclick=()=>changeLang(l)
 
 langBox.appendChild(d)
 
 })
 
-}
-
-renderLangs(langs)
-
 function changeLang(lang){
 
-let t=translations[lang]
-
-if(!t)return
+let t=translations[lang] || translations["English"]
 
 document.getElementById("title").innerText=t.title
-document.getElementById("dictBtn").innerText="📚 "+t.dict
-document.getElementById("setBtn").innerText="⚙️ "+t.settings
-document.getElementById("copyR").innerText=t.copy
-document.getElementById("copyM").innerText=t.copy
-document.getElementById("clearBtn").innerText=t.clear
-document.getElementById("photoBtn").innerText="📷 "+t.photo
-document.getElementById("langTitle").innerText=t.lang
-document.getElementById("resetLangBtn").innerText=t.reset
 document.getElementById("rLabel").innerText=t.r
 document.getElementById("mLabel").innerText=t.m
 
@@ -454,37 +429,17 @@ function resetLang(){
 changeLang("Русский")
 }
 
-// фото
-
-function openPhoto(){
-document.getElementById("photo").click()
-}
-
-document.getElementById("photo").addEventListener("change",async(e)=>{
-
-let file=e.target.files[0]
-
-if(!file)return
-
-let result=await Tesseract.recognize(file,"rus")
-
-input.value=result.data.text
-output.value=translate(input.value)
-
-})
-
-// онлайн
+// онлайн счетчик
 
 function updateCounter(){
 
-let num=Math.floor(Math.random()*120)+30
+let num=Math.floor(Math.random()*200)+40
 
 document.getElementById("counter").innerText="online: "+num
 
 }
 
 setInterval(updateCounter,3000)
-
 updateCounter()
 
 </script>
