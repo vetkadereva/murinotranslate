@@ -2,375 +2,346 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Муринский переводчик</title>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-
+<title>Translator</title>
 <style>
-body{
-font-family:Arial;
-background:#f8f9fa;
-margin:0;
-padding:30px;
-transition:0.3s;
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f5f5f5;
+    color: #333;
+    transition: background-color 0.3s, color 0.3s;
 }
-
-.dark{
-background:#202124;
-color:white;
+.dark-theme {
+    background-color: #333;
+    color: #f5f5f5;
 }
-
-.container{max-width:1000px;margin:auto;}
-
-h1{text-align:center;margin-bottom:20px;}
-
-.topBar{
-display:flex;
-justify-content:space-between;
-margin-bottom:15px;
+.container {
+    max-width: 800px;
+    margin: auto;
 }
-
-.panel{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:12px;
+textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    font-size: 16px;
+    margin-top: 5px;
+    box-sizing: border-box;
 }
-
-.box{
-background:white;
-border-radius:12px;
-border:1px solid #dadce0;
-padding:14px;
+input, select {
+    padding: 5px;
+    font-size: 16px;
 }
-
-.dark .box{
-background:#303134;
-border-color:#5f6368;
+.button {
+    display: inline-block;
+    margin: 5px 0;
+    padding: 8px 12px;
+    background: #0084ff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 4px;
 }
-
-textarea{
-width:100%;
-height:170px;
-border:none;
-resize:none;
-font-size:16px;
-outline:none;
-background:transparent;
-color:inherit;
+.button:hover {
+    background: #005bb5;
 }
-
-button{
-border:none;
-background:#e8eaed;
-padding:8px 12px;
-border-radius:8px;
-cursor:pointer;
-margin:4px;
+#input-controls {
+    margin-bottom: 10px;
 }
-
-.dark button{
-background:#3c4043;
-color:white;
+.icon-button {
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 5px;
+    vertical-align: middle;
 }
-
-.modal{
-position:fixed;
-top:0;left:0;right:0;bottom:0;
-background:rgba(0,0,0,0.4);
-display:none;
-align-items:center;
-justify-content:center;
+#counter {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #555;
 }
-
-.modalBox{
-background:white;
-padding:20px;
-border-radius:12px;
-width:400px;
-max-height:420px;
-overflow:auto;
-position:relative;
+.dark-theme #counter {
+    color: #ccc;
 }
-
-.dark .modalBox{background:#303134;}
-
-.close{
-position:absolute;
-top:10px;
-right:12px;
-cursor:pointer;
-font-size:18px;
+#outputText {
+    margin-top: 10px;
 }
-
-.loader{
-position:fixed;
-top:0;left:0;right:0;bottom:0;
-background:rgba(0,0,0,0.5);
-display:none;
-align-items:center;
-justify-content:center;
-font-size:20px;
-color:white;
-z-index:1000;
+#languageSelect {
+    margin-top: 10px;
 }
-
-.counter{
-position:fixed;
-bottom:8px;
-right:10px;
-font-size:11px;
-opacity:0.5;
+#loader {
+    display: none;
+    margin-top: 10px;
+}
+.modal {
+    display: none;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: inherit;
+    border: 2px solid #888;
+    padding: 20px;
+    z-index: 10;
+    max-width: 80%;
+    max-height: 60%;
+    overflow: auto;
+}
+.modal-close {
+    float: right;
+    cursor: pointer;
+    font-weight: bold;
+}
+.modal-content {
+    margin-top: 10px;
+}
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.3);
+    z-index: 5;
 }
 </style>
 </head>
-
 <body>
-
-<div class="loader" id="loader">📷 Обнаружение текста...</div>
-
 <div class="container">
-
-<div class="topBar">
-<button onclick="openSettings()">⚙️ Настройки</button>
-<button onclick="openDict()">📚 Словарь</button>
-<button onclick="clearText()">🧹 Очистить</button>
+    <h1>Translator / Переводчик</h1>
+    <div>
+        <button id="themeToggle" class="button">Тёмная тема</button>
+    </div>
+    <div id="input-area">
+        <label for="inputText">Введите текст:</label>
+        <div id="input-controls">
+            <textarea id="inputText" placeholder="Введите текст здесь"></textarea>
+            <span class="icon-button" id="clearBtn" title="Очистить ввод">✖️</span>
+            <span class="icon-button" id="micBtn" title="Голосовой ввод">🎤</span>
+            <input type="file" id="imageInput" accept="image/*" title="Фото с текстом">
+        </div>
+        <div id="counter">Символов: 0, Слов: 0</div>
+    </div>
+    <div>
+        <label for="languageSelect">Язык перевода:</label>
+        <select id="languageSelect">
+            <option value="auto">Авто-определение</option>
+            <option value="ru">Русский</option>
+            <option value="en">Английский</option>
+            <option value="es">Испанский</option>
+            <option value="fr">Французский</option>
+            <option value="de">Немецкий</option>
+            <option value="zh">Китайский</option>
+            <option value="ja">Японский</option>
+            <option value="ko">Корейский</option>
+            <option value="ar">Арабский</option>
+            <option value="pt">Португальский</option>
+            <!-- при необходимости добавить другие языки -->
+            <option value="mur">Муринский</option>
+        </select>
+    </div>
+    <div>
+        <button id="translateBtn" class="button">Перевести</button>
+    </div>
+    <div>
+        <label for="outputText">Результат:</label>
+        <textarea id="outputText" readonly></textarea>
+        <span class="icon-button" id="playBtn" title="Произнести вслух">🔊</span>
+    </div>
+    <div>
+        <button id="dictBtn" class="button">Словарь</button>
+        <button id="settingsBtn" class="button">Настройки</button>
+    </div>
 </div>
 
-<h1 id="title" data-base="Муринский переводчик">Муринский переводчик</h1>
-
-<div class="panel">
-
-<div class="box">
-<div id="rLabel" data-base="Русский">Русский</div>
-
-<textarea id="input"></textarea>
-
-<div>
-<button onclick="copyInput()">Копировать</button>
-<button onclick="openPhoto()">📷 Фото</button>
-<button onclick="voice()">🎤</button>
-<button onclick="speakText(input.value)">🔊</button>
+<div id="overlay"></div>
+<div id="dictionaryPanel" class="modal">
+    <span class="modal-close" id="closeDict">[Закрыть]</span>
+    <h2>Словарь</h2>
+    <div class="modal-content" id="dictionaryContent">
+        <!-- Содержимое словаря (пример) -->
+        <p>Пример словаря:</p>
+        <ul>
+            <li>Привет → Чего (пример)</li>
+            <li>Мир → ...</li>
+        </ul>
+    </div>
 </div>
-</div>
-
-<div class="box">
-<div id="mLabel" data-base="Муринский">Муринский</div>
-
-<textarea id="output" readonly></textarea>
-
-<div>
-<button onclick="copyOutput()">Копировать</button>
-<button onclick="speakText(output.value)">🔊</button>
-</div>
+<div id="settingsPanel" class="modal">
+    <span class="modal-close" id="closeSettings">[Закрыть]</span>
+    <h2>Настройки</h2>
+    <div class="modal-content">
+        <!-- Содержимое настроек -->
+        <p>Настройки переводчика...</p>
+    </div>
 </div>
 
-</div>
+<div id="loader">⌛ Распознавание текста...</div>
 
-<input type="file" id="photo" accept="image/*" hidden>
-
-</div>
-
-<div class="counter" id="counter"></div>
-
-<!-- НАСТРОЙКИ -->
-<div class="modal" id="settings">
-<div class="modalBox">
-<div class="close" onclick="closeSettings()">✖</div>
-
-<h3 id="settingsTitle" data-base="Настройки">Настройки</h3>
-
-<button id="themeBtn" onclick="toggleDark()" data-base="🌙 Тёмная тема">🌙 Тёмная тема</button>
-
-<br><br>
-
-<select onchange="changeLanguage(this.value)">
-<option value="ru">Русский</option>
-<option value="en">English</option>
-<option value="de">Deutsch</option>
-<option value="fr">Français</option>
-<option value="es">Español</option>
-<option value="it">Italiano</option>
-<option value="pl">Polski</option>
-<option value="cs">Čeština</option>
-<option value="uk">Українська</option>
-<option value="ja">日本語</option>
-<option value="zh">中文</option>
-</select>
-
-</div>
-</div>
-
-<!-- СЛОВАРЬ -->
-<div class="modal" id="dictionary">
-<div class="modalBox">
-<div class="close" onclick="closeDict()">✖</div>
-<h3 data-base="Словарь">Словарь</h3>
-<div id="dictList"></div>
-</div>
-</div>
-
+<script src="https://unpkg.com/tesseract.js@v2.1.4/dist/tesseract.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const translateBtn = document.getElementById('translateBtn');
+    const languageSelect = document.getElementById('languageSelect');
+    const playBtn = document.getElementById('playBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const micBtn = document.getElementById('micBtn');
+    const imageInput = document.getElementById('imageInput');
+    const loader = document.getElementById('loader');
+    const themeToggle = document.getElementById('themeToggle');
+    const dictBtn = document.getElementById('dictBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const dictionaryPanel = document.getElementById('dictionaryPanel');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const closeDict = document.getElementById('closeDict');
+    const closeSettings = document.getElementById('closeSettings');
+    const overlay = document.getElementById('overlay');
+    const counter = document.getElementById('counter');
 
-/* ===== МУРИНСКИЙ ПЕРЕВОД ===== */
+    // Обновление счётчика символов и слов
+    function updateCounter() {
+        const text = inputText.value;
+        const chars = text.length;
+        const words = text.trim().length > 0 ? text.trim().split(/\\s+/).length : 0;
+        counter.textContent = 'Символов: ' + chars + ', Слов: ' + words;
+    }
+    inputText.addEventListener('input', updateCounter);
 
-const exceptions={
-"я":"ч",
-"друг":"друн",
-"дед":"дод",
-"батя":"батч",
-"жена":"жинка",
-"сын":"сыр",
-"кто":"кьо",
-"что":"чьо"
-}
+    // Кнопка очистки ввода
+    clearBtn.addEventListener('click', () => {
+        inputText.value = '';
+        outputText.value = '';
+        updateCounter();
+    });
 
-function murinTranslate(text){
-let words=text.split(/(\s+)/)
-return words.map(w=>{
-let lw=w.toLowerCase()
-if(exceptions[lw]) return exceptions[lw]
-if(lw.length<=1) return w
-return w+"ость"
-}).join("")
-}
+    // Переключение темы
+    themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('dark-theme');
+        themeToggle.textContent = document.body.classList.contains('dark-theme') ? 'Светлая тема' : 'Тёмная тема';
+    });
 
-input.addEventListener("input",()=>{
-input.value=input.value.replace(/[^а-яА-ЯёЁ0-9\s.,!?]/g,"")
-output.value=murinTranslate(input.value)
-})
+    // Открытие и закрытие модальных окон (словарь, настройки)
+    function openModal(modal) {
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+    }
+    function closeModal(modal) {
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+    }
+    dictBtn.addEventListener('click', () => openModal(dictionaryPanel));
+    settingsBtn.addEventListener('click', () => openModal(settingsPanel));
+    closeDict.addEventListener('click', () => closeModal(dictionaryPanel));
+    closeSettings.addEventListener('click', () => closeModal(settingsPanel));
+    overlay.addEventListener('click', () => {
+        closeModal(dictionaryPanel);
+        closeModal(settingsPanel);
+    });
 
-/* ===== ОЧИСТКА ===== */
+    // Голосовой ввод
+    micBtn.addEventListener('click', () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Ваш браузер не поддерживает распознавание речи');
+            return;
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ru-RU';
+        recognition.onresult = function(event) {
+            inputText.value = event.results[0][0].transcript;
+            updateCounter();
+        };
+        recognition.start();
+    });
 
-function clearText(){
-input.value=""
-output.value=""
-}
+    // Произношение результата
+    playBtn.addEventListener('click', () => {
+        const text = outputText.value;
+        if (!text) return;
+        const msg = new SpeechSynthesisUtterance(text);
+        const lang = languageSelect.value === 'auto' ? 'ru' : languageSelect.value;
+        const voices = speechSynthesis.getVoices();
+        for (let voice of voices) {
+            if (voice.lang.startsWith(lang)) {
+                msg.voice = voice;
+                break;
+            }
+        }
+        msg.lang = lang;
+        speechSynthesis.speak(msg);
+    });
 
-/* ===== КОПИРОВАНИЕ ===== */
+    // Распознавание текста с изображения (OCR)
+    imageInput.addEventListener('change', () => {
+        const file = imageInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function() {
+            loader.style.display = 'block';
+            Tesseract.recognize(reader.result, 'rus')
+                .then(({ data: { text } }) => {
+                    inputText.value = text;
+                    updateCounter();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Ошибка распознавания текста');
+                })
+                .finally(() => {
+                    loader.style.display = 'none';
+                });
+        };
+        reader.readAsDataURL(file);
+    });
 
-function copyInput(){
-navigator.clipboard.writeText(input.value)
-}
+    // Функция перевода
+    async function translateText() {
+        let text = inputText.value.trim();
+        if (!text) return;
+        const targetLang = languageSelect.value;
+        // Муринский язык - особая обработка
+        if (targetLang === 'mur') {
+            // Пример: добавляем "ость" к каждому слову (пример исключений)
+            const exceptions = { 'мур': 'мур' }; // можно добавить исключения
+            const words = text.split(/(\s+)/);
+            const transformed = words.map(word => {
+                const clean = word.replace(/[^а-яА-ЯёЁ]/g, '');
+                if (exceptions[clean]) return exceptions[clean];
+                if (clean.length > 0) {
+                    return clean + 'ость';
+                }
+                return word;
+            });
+            outputText.value = transformed.join('');
+            return;
+        }
+        // Проверка выбора языка
+        if (targetLang === 'auto') { 
+            alert('Пожалуйста, выберите целевой язык для перевода.');
+            return;
+        }
+        // Используем API LibreTranslate (Argos instance)
+        const data = {
+            q: text,
+            source: 'auto',
+            target: targetLang
+        };
+        try {
+            const res = await fetch('https://translate.argosopentech.com/translate', {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await res.json();
+            outputText.value = result.translatedText;
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка перевода');
+        }
+    }
 
-function copyOutput(){
-navigator.clipboard.writeText(output.value)
-}
-
-/* ===== ТЁМНАЯ ТЕМА ===== */
-
-function toggleDark(){
-document.body.classList.toggle("dark")
-
-if(document.body.classList.contains("dark")){
-themeBtn.innerText="☀️ Светлая тема"
-}else{
-themeBtn.innerText="🌙 Тёмная тема"
-}
-}
-
-/* ===== ГОЛОС ===== */
-
-function speakText(text){
-let msg=new SpeechSynthesisUtterance(text)
-msg.lang="ru-RU"
-speechSynthesis.speak(msg)
-}
-
-/* ===== ГОЛОСОВОЙ ВВОД ===== */
-
-function voice(){
-let rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)()
-rec.lang="ru-RU"
-rec.onresult=e=>{
-input.value+=e.results[0][0].transcript
-output.value=murinTranslate(input.value)
-}
-rec.start()
-}
-
-/* ===== ФОТО С ЗАГРУЗКОЙ ===== */
-
-function openPhoto(){
-photo.value=""
-photo.click()
-}
-
-photo.addEventListener("change",async e=>{
-let file=e.target.files[0]
-if(!file) return
-
-loader.style.display="flex"
-
-let result=await Tesseract.recognize(file,"rus")
-
-input.value=result.data.text
-output.value=murinTranslate(input.value)
-
-loader.style.display="none"
-})
-
-/* ===== СЛОВАРЬ ===== */
-
-function openDict(){
-dictList.innerHTML=""
-for(let k in exceptions){
-dictList.innerHTML+=k+" → "+exceptions[k]+"<br>"
-}
-dictionary.style.display="flex"
-}
-
-function closeDict(){
-dictionary.style.display="none"
-}
-
-/* ===== НАСТРОЙКИ ===== */
-
-function openSettings(){
-settings.style.display="flex"
-}
-
-function closeSettings(){
-settings.style.display="none"
-}
-
-/* ===== ПЕРЕВОД ИНТЕРФЕЙСА (БЕЗ ПОЛОМКИ) ===== */
-
-async function changeLanguage(lang){
-
-const elements=document.querySelectorAll("[data-base]")
-
-for(let el of elements){
-
-let base=el.getAttribute("data-base")
-
-let url=`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=${lang}&dt=t&q=`+encodeURIComponent(base)
-
-try{
-let res=await fetch(url)
-let data=await res.json()
-el.innerText=data[0].map(x=>x[0]).join("")
-}catch{}
-
-}
-
-localStorage.setItem("siteLang",lang)
-
-}
-
-/* ===== СОХРАНЕНИЕ ЯЗЫКА ===== */
-
-window.onload=()=>{
-let saved=localStorage.getItem("siteLang")
-if(saved) changeLanguage(saved)
-}
-
-/* ===== ОНЛАЙН ===== */
-
-setInterval(()=>{
-counter.innerText="online "+(Math.floor(Math.random()*100)+20)
-},3000)
-
+    translateBtn.addEventListener('click', translateText);
+});
 </script>
-
 </body>
 </html>
